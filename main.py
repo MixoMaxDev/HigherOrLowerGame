@@ -1,5 +1,7 @@
 from fastapi import FastAPI
-import datetime
+from fastapi.responses import HTMLResponse, FileResponse
+import random
+import uvicorn
 
 app = FastAPI()
 
@@ -19,6 +21,10 @@ class DataEntry:
     
     def __str__(self) -> str:
         return f"DataEntry: {self.name} ({self.value_type})"
+    
+    def __eq__(self, __value: object) -> bool:
+        if isinstance(__value, DataEntry):
+            return self.name == __value.name and self.value == __value.value and self.value_type == __value.value_type
     
     def value_to_num(self):
         match self.value_type:
@@ -76,3 +82,35 @@ def load_data() -> list[DataEntry]:
     return dataset
 
 dataset = load_data()
+dataset = {
+    idx: entry for idx, entry in enumerate(dataset)
+}
+
+@app.get("/random")
+def get_random() -> dict:
+    random_id = random.randint(0, len(dataset) - 1)
+    random_data = dataset[random_id]
+    json_data = {
+        "id": random_id,
+        "name": random_data.name,
+        "value": random_data.value,
+        "image_url": random_data.image_url
+    }
+    
+    return json_data
+
+@app.get("/correct")
+def is_correct(id1: int, id2: int, id_guess: int) -> bool:
+    #return True if id_guess is the same as Max(id1, id2)
+    d1 = dataset[id1]
+    d2 = dataset[id2]
+    d_guess = dataset[id_guess]
+    
+    return Max(d1, d2) == d_guess
+
+@app.get("/")
+def root():
+    return FileResponse("./index.html")
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port = 5000)
