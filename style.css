@@ -1,0 +1,67 @@
+#data_1 {
+    float: left;
+}
+  
+#data_2 {
+    float: left;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    height: 100vh;
+}
+
+#data_1, #data_2 {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-size: cover;
+    background-position: center;
+}
+
+.content {
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    max-width: 80%;
+}
+
+h1 {
+    font-size: 2em;
+    margin: 0;
+}
+
+p {
+    font-size: 1.2em;
+    margin: 0;
+}
+
+select {
+    margin-top: 20px;
+    padding: 10px;
+    font-size: 1.2em;
+    border: 0;
+    background: white;
+    color: black;
+    cursor: pointer;
+    height: 40px;
+    outline: paleturquoise;
+    outline-offset: 5px;
+}
+
+button {
+    margin-top: 20px;
+    padding: 10px;
+    font-size: 1.2em;
+    border: 0;
+    background: white;
+    color: black;
+    cursor: pointer;
+    height: 40px;
+    outline: paleturquoise;
+}

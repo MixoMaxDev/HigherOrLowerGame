@@ -1,11 +1,169 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Higher Lower Game</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-    Test123!
+
+    <label for="dataset">Select a dataset:</label>
+    <select id="dataset">
+
+    </select>
+    <button onclick="change_dataset()">Change dataset</button>
+
+    <div id="container">
+        <div id="title">Which is higher / happened later ?</div>
+        <div id="score">Score: 0</div>
+        <div id="data_1" onclick="make_guess(1)">
+            <div id="data_1_name"></div>
+            <div id="data_1_image"></div>
+            <div id="data_1_id"></div>
+        </div>
+
+        <div id="data_2" onclick="make_guess(2)">
+            <div id="data_2_name"></div>
+            <div id="data_2_image"></div>
+            <div id="data_2_id"></div>
+        </div>
+    </div>
+
+    <script>
+    score = 0;
+    // Define your async function with await
+    async function get_random_data_entry() {
+        const response = await fetch("/random");
+        var data = await response.json();
+        //remove data.value from the data object
+        data = {...data, ...data.value};
+        return data;
+    }
+
+    // Modify the insert_data function to handle async data
+    async function insert_data(data, data_id) {
+        const dataEntry = await data;
+
+        if (dataEntry.image_url == "None") {
+            dataEntry.image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/600px-No_image_available.svg.png";
+        }
+
+        document.getElementById(data_id + "_name").innerHTML = dataEntry.name;
+        document.getElementById(data_id + "_image").innerHTML = "<img id='" + data_id + "_image' src='" + dataEntry.image_url + "' width='200px'>";
+        document.getElementById(data_id + "_id").innerHTML = dataEntry.id;
+    }
+
+    async function init() {
+
+        //populate the select dataset dropdown
+        await populate_select_dataset();
+
+        const data_1 = get_random_data_entry();
+        const data_2 = get_random_data_entry();
+
+        
+        // Use async/await to insert data
+        await insert_data(data_1, "data_1");
+        await insert_data(data_2, "data_2");
+    }
+
+    async function make_guess(data_num) {
+
+
+        try {
+            var data_1_id = document.getElementById("data_1_id").innerHTML;
+            var data_2_id = document.getElementById("data_2_id").innerHTML;
+        } catch (error) {
+            //time.sleep for 100 ms
+            await new Promise(r => setTimeout(r, 100));
+            make_guess(data_num);
+        }
+
+        if (data_num == 1) {
+            var guess_id = data_1_id;
+        } else {
+            var guess_id = data_2_id;
+        }
+
+        //url: /correct?id1={id1}&id2={id2}&id_guess={id_guess}
+
+        const response = await fetch("/correct?id1=" + data_1_id + "&id2=" + data_2_id + "&id_guess=" + guess_id);
+        var data = await response.json();
+
+        var return_code = response.status;
+        if (return_code != 200) {
+            console.error("Error: " + return_code);
+            return false;
+        }
+        
+        var is_correct = Boolean(data)
+
+
+        //if guess is correct:
+        //  score += 1
+        //move the correct guess to data_1
+        //get a new data entry for data_2
+        if (is_correct) {
+            score += 1;
+            document.getElementById("score").innerHTML = "Score: " + score;
+            
+            if (data_num == 2) {
+                //insert data_2 into data_1
+                document.getElementById("data_1_name").innerHTML = document.getElementById("data_2_name").innerHTML.replace("data_2", "data_1");
+                document.getElementById("data_1_image").innerHTML = document.getElementById("data_2_image").innerHTML.replace("data_2", "data_1");
+                document.getElementById("data_1_id").innerHTML = document.getElementById("data_2_id").innerHTML.replace("data_2", "data_1");
+            }
+
+            const data_2 = get_random_data_entry();
+            await insert_data(data_2, "data_2");
+        } else {
+            //if guess is incorrect:
+            //  score = 0
+            //get a new data entry for data_1
+            //get a new data entry for data_2
+            score = 0;
+            document.getElementById("score").innerHTML = "Score: " + score;
+            
+            const data_1 = get_random_data_entry();
+            const data_2 = get_random_data_entry();
+            await insert_data(data_1, "data_1");
+            await insert_data(data_2, "data_2");
+        }
+            
+        
+    
+}
+    
+
+    async function populate_select_dataset() {
+        //url: /data_options
+        const response = await fetch("/data_options");
+        var data = await response.json();
+
+        console.log(data); //Array ["name1", "name2", ...]
+
+        //clear the select dataset dropdown
+        document.getElementById("dataset").innerHTML = "";
+
+        //append each name to the select dataset dropdown
+        var select = document.getElementById("dataset");
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement("option");
+            option.text = data[i];
+            select.add(option);
+        }
+    }
+
+    async function change_dataset() {
+        var dataset_name = document.getElementById("dataset").value;
+        //url: url = /change_data?name={name}
+        const response = await fetch("/change_data?name=" + dataset_name);
+        var data = await response.json();
+
+        init();
+    }
+
+    
+    init();
+    </script>
 </body>
 </html>

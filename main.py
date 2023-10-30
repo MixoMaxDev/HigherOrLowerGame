@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, FileResponse
 import random
+import os
 import uvicorn
 
 app = FastAPI()
@@ -41,7 +42,7 @@ def Max(a: DataEntry, b: DataEntry) -> DataEntry or None:
     if a.value_type != b.value_type:
         raise Exception("Cannot compare DataEntrys of different value types")
     if a.value_to_num() == b.value_to_num():
-        return None
+        return a
     elif a.value_to_num() > b.value_to_num():
         return a
     else:
@@ -60,8 +61,8 @@ def Min(a: DataEntry, b: DataEntry) -> DataEntry or None:
         return a
 
 
-def load_data() -> list[DataEntry]:
-    csv_path = "./data.csv"
+def load_data(name) -> list[DataEntry]:
+    csv_path = f"./data/{name}.csv"
     
     dataset = []
     
@@ -81,13 +82,15 @@ def load_data() -> list[DataEntry]:
 
     return dataset
 
-dataset = load_data()
+global dataset
+dataset = load_data("important_history")
 dataset = {
     idx: entry for idx, entry in enumerate(dataset)
 }
 
 @app.get("/random")
 def get_random() -> dict:
+    global dataset
     random_id = random.randint(0, len(dataset) - 1)
     random_data = dataset[random_id]
     json_data = {
@@ -101,6 +104,7 @@ def get_random() -> dict:
 
 @app.get("/correct")
 def is_correct(id1: int, id2: int, id_guess: int) -> bool:
+    #url: /correct?id1={id1}&id2={id2}&id_guess={id_guess}
     #return True if id_guess is the same as Max(id1, id2)
     d1 = dataset[id1]
     d2 = dataset[id2]
@@ -108,9 +112,39 @@ def is_correct(id1: int, id2: int, id_guess: int) -> bool:
     
     return Max(d1, d2) == d_guess
 
+@app.get("/change_data")
+def change_data_set(name: str) -> bool:
+    #url = /change_data?name={name}
+    global dataset
+    try:
+        dataset = load_data(name)
+        dataset = {
+            idx: entry for idx, entry in enumerate(dataset)
+        }
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+@app.get("/data_options")
+def get_datasets() -> list[str]:
+    files = os.listdir("./data")
+    file_names = [file.split(".")[0] for file in files]
+    return file_names
+
 @app.get("/")
 def root():
     return FileResponse("./index.html")
+
+@app.get("/script.js")
+def script():
+    return FileResponse("./script.js")
+
+@app.get("/style.css")
+def style():
+    return FileResponse("./style.css")
+
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port = 5000)
